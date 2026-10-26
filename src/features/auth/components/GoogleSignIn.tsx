@@ -1,0 +1,9 @@
+import { useState } from 'react';
+import { googleConfigured, loginGoogle } from '../api/auth';
+import { authErrorKey } from '../model/authPolicy';
+import { translator, type Language } from '../../../shared/i18n/index';
+export function GoogleSignIn({language,disabled,onSuccess,onBusy}:{language:Language;disabled?:boolean;onSuccess:()=>void;onBusy?:(busy:boolean)=>void}){
+ const t=translator(language),[busy,setBusy]=useState(false),[error,setError]=useState(''),[unauthorizedDomain,setUnauthorizedDomain]=useState(false);
+ async function start(){setBusy(true);onBusy?.(true);setError('');setUnauthorizedDomain(false);try{await loginGoogle(language);onSuccess();}catch(e){setError(t(authErrorKey(e)));setUnauthorizedDomain(typeof e==='object'&&e!==null&&'code' in e&&e.code==='auth/unauthorized-domain');}finally{setBusy(false);onBusy?.(false);}}
+ return <div className="google-auth"><button type="button" disabled={disabled||busy||!googleConfigured} className="google-signin" aria-busy={busy} onClick={()=>void start()}><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.4a4.6 4.6 0 0 1-2 3v2.6h3.3c1.9-1.7 2.9-4.3 2.9-7.6Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.7-2.4l-3.3-2.6c-.9.6-2 .9-3.4.9a6 6 0 0 1-5.6-4.1H3v2.7A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.8a6 6 0 0 1 0-3.6V7.5H3a10 10 0 0 0 0 9l3.4-2.7Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5L18.7 5A9.5 9.5 0 0 0 12 2a10 10 0 0 0-9 5.5l3.4 2.7A6 6 0 0 1 12 6.1Z"/></svg>{t(busy?'Завершите вход в браузере…':'Продолжить с Google')}</button>{!googleConfigured&&<p className="muted">{t('Вход через Google пока недоступен в этой сборке.')}</p>}{unauthorizedDomain&&import.meta.env.DEV&&window.location.hostname==='127.0.0.1'&&<p><a href={`http://localhost:${window.location.port}/`}>{t('Открыть приложение на localhost')}</a></p>}{error&&<p className="error" role="alert">{error}</p>}</div>;
+}
